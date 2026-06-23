@@ -6,10 +6,10 @@ from pydantic import BaseModel
 class MessageRead(BaseModel):
     id: UUID
     party_id: UUID
-    sender_type: str
-    sender_id: UUID | None
+    sender_id: UUID
     content: str
-    msg_type: str
-    timestamp: datetime
+    kind: str
+    metadata_: dict | None = None
+    created_at: datetime
 
     model_config = {"from_attributes": True}
