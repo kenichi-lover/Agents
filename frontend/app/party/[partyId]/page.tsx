@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { useEffect, useState } from "react";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { ChatStream } from "@/components/ChatStream";
 import { AgentPanel } from "@/components/AgentPanel";
@@ -9,7 +10,12 @@ import { RoundTable } from "@/components/RoundTable";
 
 export default function PartyRoom({ params }: { params: Promise<{ partyId: string }> }) {
   const { partyId } = use(params);
-  const token = ""; // TODO: from auth context / localStorage
+  const [token, setToken] = useState("");
+
+  useEffect(() => {
+    setToken(localStorage.getItem("access_token") ?? "");
+  }, []);
+
   const { isConnected, messages, sendMessage } = useWebSocket(partyId, token);
 
   const handleSendMessage = (content: string) => {
