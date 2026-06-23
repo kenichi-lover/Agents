@@ -39,15 +39,9 @@ export function ChatStream({ messages, onSend }: ChatStreamProps) {
     setInput("");
   };
 
-  // Group messages: thinking messages are replaced by replies
-  // We track message_id -> thinking status
-  const thinkingMap = new Map<string, boolean>();
   const replyMap = new Map<string, string>(); // message_id -> reply content
 
   for (const msg of messages) {
-    if (msg.type === "chat:thinking" && msg.message_id) {
-      thinkingMap.set(msg.message_id, true);
-    }
     if (msg.type === "chat:reply" && msg.message_id && msg.content) {
       replyMap.set(msg.message_id, msg.content);
     }

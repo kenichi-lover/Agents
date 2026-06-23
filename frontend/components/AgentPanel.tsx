@@ -21,12 +21,22 @@ interface AgentPanelProps {
 
 export function AgentPanel({ onPromptAgent }: AgentPanelProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [promptText, setPromptText] = useState("");
+  const [prompts, setPrompts] = useState<Record<string, string>>({});
+
+  const handlePromptChange = (agentId: string, value: string) => {
+    setPrompts((prev) => ({ ...prev, [agentId]: value }));
+  };
 
   const handlePrompt = () => {
-    if (!promptText.trim() || !expandedId) return;
-    onPromptAgent(expandedId, promptText.trim());
-    setPromptText("");
+    if (!expandedId) return;
+    const text = prompts[expandedId] ?? "";
+    if (!text.trim()) return;
+    onPromptAgent(expandedId, text.trim());
+    setPrompts((prev) => {
+      const next = { ...prev };
+      delete next[expandedId];
+      return next;
+    });
   };
 
   return (
@@ -60,15 +70,15 @@ export function AgentPanel({ onPromptAgent }: AgentPanelProps) {
                 <div className="flex gap-1">
                   <input
                     type="text"
-                    value={promptText}
-                    onChange={(e) => setPromptText(e.target.value)}
+                    value={prompts[agent.id] ?? ""}
+                    onChange={(e) => handlePromptChange(agent.id, e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handlePrompt()}
                     placeholder={`Message ${agent.name}...`}
                     className="flex-1 px-2 py-1 text-xs rounded bg-slate-800 border border-slate-600 text-white placeholder-slate-500 outline-none focus:border-violet-500"
                   />
                   <button
                     onClick={handlePrompt}
-                    disabled={!promptText.trim()}
+                    disabled={!((prompts[agent.id] ?? "").trim())}
                     className="px-2 py-1 text-xs rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition"
                   >
                     Send
