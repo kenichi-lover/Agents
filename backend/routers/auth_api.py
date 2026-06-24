@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.database import get_session
 from .deps import get_current_user_dep
 from models.user import User
-from schemas.auth import Token, UserRead
+from schemas.auth import Token, UserLogin, UserRead
 from schemas.user import UserCreate
 from services.auth_svc import register_user, authenticate_user
 from utils.security import create_access_token
@@ -26,7 +26,7 @@ async def auth_register(
 
 @router.post("/login", response_model=Token)
 async def auth_login(
-    data: UserCreate,
+    data: UserLogin,
     session: AsyncSession = Depends(get_session),
 ):
     user = await authenticate_user(session, data.email, data.password)
