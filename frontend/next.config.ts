@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
         source: "/api/parties/:path*",
         destination: "http://localhost:8000/api/parties/:path*",
       },
+      {
+        source: "/api/agents/:path*",
+        destination: "http://localhost:8000/api/agents/:path*",
+      },
+      {
+        source: "/api/presence/:path*",
+        destination: "http://localhost:8000/api/presence/:path*",
+      },
     ];
   },
 };

@@ -1,11 +1,47 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
+interface PresenceData {
+  party_id: string;
+  online_users: number;
+  online_agents: number;
+}
+
 interface PresenceBarProps {
   isConnected: boolean;
   partyId: string;
 }
 
 export function PresenceBar({ isConnected, partyId }: PresenceBarProps) {
+  const [presence, setPresence] = useState<PresenceData | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!isConnected) return;
+    const fetchPresence = async () => {
+      try {
+        const resp = await fetch(`/api/presence/${partyId}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          setPresence(data);
+          setError(false);
+        }
+      } catch {
+        setError(true);
+      }
+    };
+    fetchPresence();
+    const interval = setInterval(fetchPresence, 5000);
+    return () => clearInterval(interval);
+  }, [isConnected, partyId]);
+
+  const totalOnline = presence
+    ? presence.online_users + presence.online_agents
+    : error
+      ? "?"
+      : "...";
+
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
       <div className="flex items-center gap-3">
@@ -25,8 +61,15 @@ export function PresenceBar({ isConnected, partyId }: PresenceBarProps) {
         </div>
       </div>
       <div className="flex items-center gap-2 text-xs text-slate-400">
-        <span className="hidden sm:inline">2 agents · 1 human</span>
-        <span className="sm:hidden">3 online</span>
+        {presence ? (
+          <>
+            <span>{presence.online_users} user{presence.online_users !== 1 ? "s" : ""}</span>
+            <span>·</span>
+            <span>{presence.online_agents} agent{presence.online_agents !== 1 ? "s" : ""}</span>
+          </>
+        ) : (
+          <span>{totalOnline} online</span>
+        )}
       </div>
     </div>
   );

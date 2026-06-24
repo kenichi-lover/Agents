@@ -5,7 +5,70 @@
 
 ---
 
-## 一、项目结构
+## 一、当前进度
+
+> 最后更新：2026-06-25
+
+### ✅ 已完成（Tasks 1-17）
+
+| # | 任务 | 说明 |
+|---|------|------|
+| 1 | 基础架构 | 依赖、settings、bcrypt、security、DDL、lifespan |
+| 2 | 数据模型 | User, Agent, Party, PartyMember, Message（SQLModel table=True） |
+| 3 | Pydantic schemas | Create/Read DTOs 全实体 |
+| 4 | Auth Service | register, login, get_current_user, WS token 解码 |
+| 5 | Auth Router | POST /auth/register, POST /auth/login, GET /auth/me |
+| 6 | Party Router | CRUD + join/leave |
+| 7 | Messages + WebSocket | GET /parties/{id}/messages, WebSocket 路由修复 |
+| 8 | Seed Agents + 登录页 | 3 个默认 Agent, 登录页对接 API, axios interceptor, Next.js rewrites |
+| 9 | Party 页 Token | localStorage 读取 token → WebSocket 认证连接 |
+| 10 | Bug #1 修复 | WebSocket 消息 `is_user` 标记 + ChatStream 消息分类渲染修复 |
+| 11 | Agent CRUD API | GET/POST/PATCH/DELETE /api/agents + 前端 AgentPanel 对接 |
+| 12 | 首页/大厅 | 聚会列表 + 创建聚会入口，登录后跳转大厅 |
+| 13 | Presence Tracker | 后端 ConnectionManager + GET /api/presence/{party_id}，前端 PresenceBar 实时显示 |
+| 14 | Agent Engine + LLM Service | LLM 封装(openai stub) + WebSocket user:prompt 触发推理引擎 |
+| 15 | Alembic 迁移 | 自动检测 schema 变更，生成 initial schema migration |
+| 16 | 3D 聚会空间 | React Three Fiber 3D 房间 + Agent 胶囊体 + 圆桌场景 + 自由走动 |
+| 17 | 测试套件 | 后端 101 pytest + 前端 46 vitest 全部通过 |
+
+**端到端链路已打通**：注册/登录 → 大厅 → 聚会房间 → WebSocket → Agent 自动回复
+
+> 2026-06-25 完成最终审计：Party 列表 API、ChatStream 发消息、AgentPanel 交互均已确认端到端可用。
+
+### ✅ 全部完成（Tasks 1-17）
+
+| # | 任务 | 说明 |
+|---|------|------|
+| 1 | 基础架构 | 依赖、settings、bcrypt、security、DDL、lifespan |
+| 2 | 数据模型 | User, Agent, Party, PartyMember, Message（SQLModel table=True） |
+| 3 | Pydantic schemas | Create/Read DTOs 全实体 |
+| 4 | Auth Service | register, login, get_current_user, WS token 解码 |
+| 5 | Auth Router | POST /auth/register, POST /auth/login, GET /auth/me |
+| 6 | Party Router | CRUD + join/leave |
+| 7 | Messages + WebSocket | GET /parties/{id}/messages, WebSocket 路由修复 |
+| 8 | Seed Agents + 登录页 | 3 个默认 Agent, 登录页对接 API, axios interceptor, Next.js rewrites |
+| 9 | Party 页 Token | localStorage 读取 token → WebSocket 认证连接 |
+| 10 | Bug #1 修复 | WebSocket 消息 `is_user` 标记 + ChatStream 消息分类渲染修复 |
+| 11 | Agent CRUD API | GET/POST/PATCH/DELETE /api/agents + 前端 AgentPanel 对接 |
+| 12 | 首页/大厅 | 聚会列表 + 创建聚会入口，登录后跳转大厅 |
+| 13 | Presence Tracker | 后端 ConnectionManager + GET /api/presence/{party_id}，前端 PresenceBar 实时显示 |
+| 14 | Agent Engine + LLM Service | LLM 封装(openai stub) + WebSocket user:prompt 触发推理引擎 |
+| 15 | Alembic 迁移 | 自动检测 schema 变更，生成 initial schema migration |
+| 16 | 3D 聚会空间 | React Three Fiber 3D 房间 + Agent 胶囊体 + 圆桌场景 + 自由走动 |
+| 17 | 测试套件 | 后端 101 pytest + 前端 46 vitest 全部通过 |
+
+### 🚧 待开发（P3 低优先级，用户可选）
+
+| 模块 | 说明 |
+|------|------|
+| 记忆系统 | Redis + 向量存储，Agent 持久化记忆 |
+| 圆桌讨论逻辑 | 后端调度 (3D 场景已完成) |
+| 本地 LLM | Ollama/vLLM 支持 |
+| 聚会回放导出 | 消息归档 |
+
+---
+
+## 二、项目结构
 
 ```
 fastapi/agent/
@@ -54,6 +117,8 @@ fastapi/agent/
     │   │       └── page.tsx   # 聚会房间
     │   ├── agents/
     │   │   └── page.tsx       # Agent 管理页
+    │   ├── login/
+    │   │   └── page.tsx       # 登录/注册页（VANTA 粒子背景）
     │   └── api/               # Next.js API Routes (如需)
     ├── components/
     │   ├── PartyRoom.tsx
@@ -76,7 +141,7 @@ fastapi/agent/
 
 ---
 
-## 二、技术栈
+## 三、技术栈
 
 | 层级 | 技术 | 版本约束 |
 |------|------|---------|
@@ -95,7 +160,7 @@ fastapi/agent/
 
 ---
 
-## 三、编码约束
+## 四、编码约束
 
 ### 3.1 Python 后端
 
@@ -133,7 +198,7 @@ fastapi/agent/
 
 ---
 
-## 四、核心数据流
+## 五、核心数据流
 
 ```
 用户发送消息
@@ -165,7 +230,7 @@ fastapi/agent/
 
 ---
 
-## 五、Agent 行为约束
+## 六、Agent 行为约束
 
 1. **响应触发条件**（满足任一即触发）：
    - 被用户 `@提及`
@@ -189,7 +254,7 @@ fastapi/agent/
 
 ---
 
-## 六、API 约定
+## 七、API 约定
 
 ### WebSocket 端点
 
@@ -217,7 +282,7 @@ GET    /api/parties/{id}/messages  # 消息历史（分页）
 
 ---
 
-## 七、环境变量模板
+## 八、环境变量模板
 
 ```env
 # 数据库
@@ -242,7 +307,7 @@ DEBUG=false
 
 ---
 
-## 八、开发流程
+## 九、开发流程
 
 1. **启动后端**：`cd backend && uv run uvicorn main:app --reload`
 2. **启动前端**：`cd frontend && npm run dev`
@@ -254,7 +319,7 @@ DEBUG=false
 
 ---
 
-## 九、扩展预留
+## 十、扩展预留
 
 - [ ] 3D/2D 可视化聚会场景
 - [ ] Agent 间私聊（观察者可见/不可见模式）

@@ -12,6 +12,13 @@ class AgentCreate(BaseModel):
     assertiveness: float = 0.5
 
 
+class AgentUpdate(BaseModel):
+    name: str | None = None
+    personality: str | None = None
+    expertise: list[str] | None = None
+    assertiveness: float | None = None
+
+
 class AgentRead(BaseModel):
     id: UUID
     name: str

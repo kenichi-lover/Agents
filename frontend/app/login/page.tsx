@@ -1,5 +1,11 @@
 "use client";
 
+declare global {
+  interface Window {
+    THREE: any;
+  }
+}
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -74,7 +80,7 @@ export default function LoginPage() {
 
       if (isLogin && resp.data.access_token) {
         localStorage.setItem("access_token", resp.data.access_token);
-        router.push("/party/demo");
+        router.push("/");
       } else if (!isLogin) {
         setIsLogin(true);
         setError("Registration successful, please login");

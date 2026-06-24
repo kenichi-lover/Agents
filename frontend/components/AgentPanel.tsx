@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const AGENT_COLORS: Record<string, string> = {
+  "1": "bg-violet-500",
+  "2": "bg-cyan-500",
+  "3": "bg-pink-500",
+};
 
 interface Agent {
   id: string;
@@ -9,19 +15,32 @@ interface Agent {
   online: boolean;
 }
 
-const MOCK_AGENTS: Agent[] = [
-  { id: "agent-1", name: "Aria", color: "bg-violet-500", online: true },
-  { id: "agent-2", name: "Orion", color: "bg-cyan-500", online: true },
-  { id: "agent-3", name: "Luna", color: "bg-pink-500", online: false },
-];
-
 interface AgentPanelProps {
   onPromptAgent: (agentId: string, prompt: string) => void;
 }
 
 export function AgentPanel({ onPromptAgent }: AgentPanelProps) {
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [prompts, setPrompts] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/agents")
+      .then((r) => r.json())
+      .then((data: any[]) => {
+        setAgents(
+          data.map((a, i) => ({
+            id: a.id,
+            name: a.name,
+            color: AGENT_COLORS[String((i % 3) + 1)] ?? "bg-slate-500",
+            online: true,
+          }))
+        );
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   const handlePromptChange = (agentId: string, value: string) => {
     setPrompts((prev) => ({ ...prev, [agentId]: value }));
@@ -39,6 +58,14 @@ export function AgentPanel({ onPromptAgent }: AgentPanelProps) {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full text-slate-500 text-sm">
+        Loading agents…
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wider">
@@ -46,7 +73,10 @@ export function AgentPanel({ onPromptAgent }: AgentPanelProps) {
       </h3>
 
       <div className="space-y-1 flex-1 overflow-y-auto">
-        {MOCK_AGENTS.map((agent) => (
+        {agents.length === 0 && (
+          <div className="text-xs text-slate-500 text-center py-4">No agents</div>
+        )}
+        {agents.map((agent) => (
           <div key={agent.id}>
             <button
               onClick={() => setExpandedId(expandedId === agent.id ? null : agent.id)}

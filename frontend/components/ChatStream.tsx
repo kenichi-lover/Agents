@@ -7,14 +7,17 @@ interface ChatMessage {
   content?: string;
   agent_id?: string;
   user_id?: string;
+  sender_id?: string;
   name?: string;
   message_id?: string;
   timestamp?: string;
+  is_user?: boolean;
 }
 
 interface ChatStreamProps {
   messages: ChatMessage[];
   onSend: (content: string) => void;
+  sendStatus?: "idle" | "sending" | "sent" | "error";
 }
 
 const AGENT_AVATARS: Record<string, { name: string; color: string }> = {
@@ -23,7 +26,7 @@ const AGENT_AVATARS: Record<string, { name: string; color: string }> = {
   "agent-3": { name: "Luna", color: "bg-pink-500" },
 };
 
-export function ChatStream({ messages, onSend }: ChatStreamProps) {
+export function ChatStream({ messages, onSend, sendStatus = "idle" }: ChatStreamProps) {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -69,10 +72,16 @@ export function ChatStream({ messages, onSend }: ChatStreamProps) {
         )}
 
         {visibleMessages.map((msg, i) => {
+          const key = msg.sender_id && msg.timestamp
+            ? `${msg.sender_id}-${msg.timestamp}`
+            : msg.message_id
+              ? `msg-${i}-${msg.message_id}`
+              : `msg-${i}-${msg.type}-${i}`;
+
           // System messages
           if (msg.type.startsWith("system:")) {
             return (
-              <div key={i} className="flex items-center justify-center text-xs text-slate-500 py-1">
+              <div key={key} className="flex items-center justify-center text-xs text-slate-500 py-1">
                 <span className="bg-slate-800 px-3 py-1 rounded-full">
                   {msg.type === "system:join" ? "joined" : msg.type === "system:leave" ? "left" : msg.type}
                   {msg.name ? ` — ${msg.name}` : ""}
@@ -84,7 +93,7 @@ export function ChatStream({ messages, onSend }: ChatStreamProps) {
           // Thinking bubble
           if (msg.type === "chat:thinking") {
             return (
-              <div key={i} className="flex items-start gap-2">
+              <div key={key} className="flex items-start gap-2">
                 <div className="w-6 h-6 rounded-full bg-violet-500 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white">
                   ?
                 </div>
@@ -103,7 +112,7 @@ export function ChatStream({ messages, onSend }: ChatStreamProps) {
           if (msg.type === "chat:reply") {
             const agent = AGENT_AVATARS[msg.agent_id ?? ""] ?? { name: "?", color: "bg-slate-500" };
             return (
-              <div key={i} className="flex items-start gap-2">
+              <div key={key} className="flex items-start gap-2">
                 <div className={`w-6 h-6 rounded-full ${agent.color} flex-shrink-0 flex items-center justify-center text-xs font-bold text-white`}>
                   {agent.name[0]}
                 </div>
@@ -114,11 +123,22 @@ export function ChatStream({ messages, onSend }: ChatStreamProps) {
             );
           }
 
-          // Regular chat message — agent message
+          // User message (explicit marker from backend)
+          if (msg.is_user) {
+            return (
+              <div key={key} className="flex items-start gap-2 justify-end">
+                <div className="bg-violet-600 rounded-2xl rounded-tr-sm px-3 py-2 max-w-md text-sm text-white">
+                  {msg.content}
+                </div>
+              </div>
+            );
+          }
+
+          // Agent message — check by agent_id
           const agent = AGENT_AVATARS[msg.agent_id ?? ""];
           if (agent) {
             return (
-              <div key={i} className="flex items-start gap-2">
+              <div key={key} className="flex items-start gap-2">
                 <div className={`w-6 h-6 rounded-full ${agent.color} flex-shrink-0 flex items-center justify-center text-xs font-bold text-white`}>
                   {agent.name[0]}
                 </div>
@@ -129,11 +149,11 @@ export function ChatStream({ messages, onSend }: ChatStreamProps) {
             );
           }
 
-          // User message
+          // Fallback: unknown message type — render as-is
           return (
-            <div key={i} className="flex items-start gap-2 justify-end">
-              <div className="bg-violet-600 rounded-2xl rounded-tr-sm px-3 py-2 max-w-md text-sm text-white">
-                {msg.content}
+            <div key={key} className="flex items-start gap-2">
+              <div className="bg-slate-600 rounded-2xl rounded-tl-sm px-3 py-2 max-w-md text-sm text-slate-300">
+                {msg.content ?? `[${msg.type}]`}
               </div>
             </div>
           );
@@ -144,6 +164,17 @@ export function ChatStream({ messages, onSend }: ChatStreamProps) {
 
       {/* Input bar */}
       <div className="border-t border-slate-700 px-4 py-3">
+        {(sendStatus === "error" || sendStatus === "sending") && (
+          <div className={`mb-2 text-xs text-center py-1 rounded ${
+            sendStatus === "error"
+              ? "bg-red-900/50 text-red-300"
+              : "bg-yellow-900/50 text-yellow-300"
+          }`}>
+            {sendStatus === "error"
+              ? "⚠ 连接已断开，消息可能未送达"
+              : "⏳ 发送中..."}
+          </div>
+        )}
         <div className="flex gap-2">
           <input
             type="text"

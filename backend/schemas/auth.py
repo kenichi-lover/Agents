@@ -10,6 +10,11 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+
 class UserRead(BaseModel):
     id: UUID
     email: str
